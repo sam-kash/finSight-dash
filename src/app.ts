@@ -11,9 +11,9 @@ app.use(express.json())
 
 // Routes
 app.use('/api/auth', authRouter)
-app.use('api/users' , usersRouter)
-app.use('api/records', recordsRouter)
-app.use('api/audit', auditRouter)
+app.use('/api/users' , usersRouter)
+app.use('/api/records', recordsRouter)
+app.use('/api/audit', auditRouter)
 
 // Health check
 app.get('/health', (req, res) => {
