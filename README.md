@@ -12,6 +12,24 @@ The goal was not just to meet the assignment checklist, but to think about what 
 
 ---
 
+## Live Demo
+
+| | URL |
+|---|---|
+| 🌐 Frontend | https://fin-sight-dash.vercel.app |
+| 🔌 Backend API | https://finsight-dash-backend.onrender.com |
+
+In order to test the backend -> https://finsight-dash-backend.onrender.com/health
+It should show status : ok
+
+**Demo credentials — try all three roles to see access control in action:**
+
+| Role | Email | Password | Access |
+|---|---|---|---|
+| Admin | admin@finsight.com | password123 | Full access — create, delete, audit logs, dashboard |
+| Analyst | analyst@finsight.com | password123 | Dashboard analytics + read records |
+| Viewer | viewer@finsight.com | password123 | Read records only, analytics locked |
+
 ## Tech Stack
 
 | Layer | Choice | Reason |
@@ -265,7 +283,35 @@ All errors flow through a single global error handler. Three categories are hand
 
 ---
 
+## Frontend
+
+A minimal dashboard UI built to demonstrate the backend's capabilities end-to-end.
+
+**Stack:** Next.js 14 (App Router) + TypeScript + Tailwind CSS + Recharts
+
+**Pages:**
+- `/login` — JWT authentication
+- `/register` — Account creation with role selection (open for demo purposes)
+- `/dashboard` — Role-aware analytics: summary cards, 6-month cash flow chart, burn rate, recent activity
+- `/records` — Full records table with type/category/date filters, pagination, and soft delete
+
+**Role-aware UI** — the frontend reflects backend permissions exactly. A Viewer sees no analytics and no add/delete controls. An Analyst sees the dashboard but cannot mutate data. An Admin gets full access. The UI doesn't just hide buttons — the backend independently rejects unauthorized requests regardless of what the frontend shows.
+
+**Note:** The frontend exists purely to demonstrate the backend. It is not the focus of this submission — the API, data model, access control, and system design are.
+
+---
+
+## Deployment
+
+| Service | Platform | Notes |
+|---|---|---|
+| Backend | Render (Web Service) | Auto-deploys on push to `main` |
+| PostgreSQL | Render (Managed Postgres) | Free tier, Oregon region |
+| Frontend | Vercel | Auto-deploys on push to `main`, root directory set to `frontend/` |
+
 ## Tradeoffs
+
+| Single repo for frontend + backend | Every push rebuilds both services. Production setup would use separate repos with independent pipelines. |
 
 | Decision | Tradeoff |
 |---|---|
