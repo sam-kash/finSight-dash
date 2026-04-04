@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -86,6 +87,12 @@ export default function LoginPage() {
               {loading ? 'Signing in...' : 'Sign in'}
             </button>
           </form>
+          <p className="text-center text-gray-400 text-sm pt-2">
+            Don't have an account?{' '}
+            <Link href="/register" className="text-indigo-400 hover:text-indigo-300 transition">
+              Create one
+            </Link>
+          </p>
         </div>
       </div>
     </div>

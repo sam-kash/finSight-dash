@@ -5,7 +5,6 @@ interface Record {
   category: string
   date: string
   description?: string
-  runningBalance: number
   createdBy: { fullName: string }
 }
 
@@ -43,7 +42,6 @@ export default function RecentActivity({ records }: { records: Record[] }) {
               <p className={`text-sm font-semibold ${record.type === 'INCOME' ? 'text-emerald-400' : 'text-red-400'}`}>
                 {record.type === 'INCOME' ? '+' : '-'}{formatCurrency(record.amount)}
               </p>
-              <p className="text-gray-500 text-xs">{formatCurrency(record.runningBalance)}</p>
             </div>
           </div>
         ))}

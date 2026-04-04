@@ -1,11 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
+import Link from 'next/link'
 import { useAuth } from '@/lib/auth'
 import api from '@/lib/api'
 import StatCard from './components/StatCard'
 import TrendsChart from './components/TrendsChart'
 import RecentActivity from './components/RecentActivity'
+import AddRecordModal from './components/AddRecordModal'
 
 export default function DashboardPage() {
   const { user, logout } = useAuth()
@@ -15,36 +17,38 @@ export default function DashboardPage() {
   const [recent, setRecent] = useState<any[]>([])
   const [burnRate, setBurnRate] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [showModal, setShowModal] = useState(false)
 
   const canViewDashboard = user?.role === 'ANALYST' || user?.role === 'ADMIN'
+  const canWrite = user?.role === 'ADMIN'
+
+  const fetchData = useCallback(async () => {
+    try {
+      const [summaryRes, recentRes] = await Promise.all([
+        canViewDashboard ? api.get('/api/dashboard/summary') : Promise.resolve(null),
+        api.get('/api/records?limit=10'),
+      ])
+      if (summaryRes) setSummary(summaryRes.data.data)
+      setRecent(recentRes.data.records || [])
+
+      if (canViewDashboard) {
+        const [compRes, trendsRes, burnRes] = await Promise.all([
+          api.get('/api/dashboard/comparison'),
+          api.get('/api/dashboard/trends'),
+          api.get('/api/dashboard/burn-rate'),
+        ])
+        setComparison(compRes.data.data)
+        setTrends(trendsRes.data.data)
+        setBurnRate(burnRes.data.data)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [canViewDashboard])
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        const [summaryRes, recentRes] = await Promise.all([
-          canViewDashboard ? api.get('/api/dashboard/summary') : Promise.resolve(null),
-          api.get('/api/records?limit=10'),
-        ])
-
-        if (summaryRes) setSummary(summaryRes.data.data)
-        setRecent(recentRes.data.records || [])
-
-        if (canViewDashboard) {
-          const [compRes, trendsRes, burnRes] = await Promise.all([
-            api.get('/api/dashboard/comparison'),
-            api.get('/api/dashboard/trends'),
-            api.get('/api/dashboard/burn-rate'),
-          ])
-          setComparison(compRes.data.data)
-          setTrends(trendsRes.data.data)
-          setBurnRate(burnRes.data.data)
-        }
-      } finally {
-        setLoading(false)
-      }
-    }
     if (user) fetchData()
-  }, [user, canViewDashboard])
+  }, [user, fetchData])
 
   function formatCurrency(amount: number) {
     return new Intl.NumberFormat('en-IN', {
@@ -67,24 +71,41 @@ export default function DashboardPage() {
       {/* Navbar */}
       <nav className="border-b border-gray-800 bg-gray-900/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center">
-              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center">
+                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <span className="font-semibold text-white">Finsight Dash</span>
             </div>
-            <span className="font-semibold text-white">Finsight Dash</span>
+            {/* Nav links */}
+            <div className="flex items-center gap-4">
+              <Link href="/dashboard" className="text-sm text-indigo-400 font-medium">
+                Dashboard
+              </Link>
+              <Link href="/records" className="text-sm text-gray-400 hover:text-white transition">
+                Records
+              </Link>
+            </div>
           </div>
+
           <div className="flex items-center gap-4">
+            {canWrite && (
+              <button
+                onClick={() => setShowModal(true)}
+                className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-1.5"
+              >
+                <span className="text-lg leading-none">+</span> Add Record
+              </button>
+            )}
             <div className="text-right">
               <p className="text-sm text-white font-medium">{user?.fullName}</p>
               <p className="text-xs text-gray-400">{user?.role}</p>
             </div>
-            <button
-              onClick={logout}
-              className="text-gray-400 hover:text-white text-sm transition"
-            >
+            <button onClick={logout} className="text-gray-400 hover:text-white text-sm transition">
               Sign out
             </button>
           </div>
@@ -95,7 +116,8 @@ export default function DashboardPage() {
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-white">
-            Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, {user?.fullName.split(' ')[0]}
+            Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'},{' '}
+            {user?.fullName.split(' ')[0]}
           </h1>
           <p className="text-gray-400 text-sm mt-0.5">
             {new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
@@ -142,38 +164,40 @@ export default function DashboardPage() {
         {/* Burn Rate */}
         {canViewDashboard && burnRate && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <StatCard
-              title="Daily Burn Rate"
-              value={formatCurrency(burnRate.dailyBurnRate)}
-              subtitle="avg daily spend (last 30 days)"
-            />
-            <StatCard
-              title="Projected Monthly Spend"
-              value={formatCurrency(burnRate.projectedMonthly)}
-              subtitle="based on current burn rate"
-            />
-            <StatCard
-              title="Projected Remaining Spend"
-              value={formatCurrency(burnRate.projectedRemainingSpend)}
-              subtitle={`${burnRate.daysLeftInMonth} days left this month`}
-            />
+            <StatCard title="Daily Burn Rate" value={formatCurrency(burnRate.dailyBurnRate)} subtitle="avg daily spend (last 30 days)" />
+            <StatCard title="Projected Monthly Spend" value={formatCurrency(burnRate.projectedMonthly)} subtitle="based on current burn rate" />
+            <StatCard title="Projected Remaining Spend" value={formatCurrency(burnRate.projectedRemainingSpend)} subtitle={`${burnRate.daysLeftInMonth} days left this month`} />
           </div>
         )}
 
         {/* Trends Chart */}
-        {canViewDashboard && trends.length > 0 && (
-          <TrendsChart data={trends} />
-        )}
+        {canViewDashboard && trends.length > 0 && <TrendsChart data={trends} />}
 
         {/* Recent Activity */}
         {recent.length > 0 ? (
           <RecentActivity records={recent} />
         ) : (
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 text-center text-gray-500">
-            No records yet.
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 text-center">
+            <p className="text-gray-500 text-sm">No records yet.</p>
+            {canWrite && (
+              <button
+                onClick={() => setShowModal(true)}
+                className="mt-3 text-indigo-400 hover:text-indigo-300 text-sm transition"
+              >
+                Add your first record →
+              </button>
+            )}
           </div>
         )}
       </main>
+
+      {/* Add Record Modal */}
+      {showModal && (
+        <AddRecordModal
+          onClose={() => setShowModal(false)}
+          onSuccess={fetchData}
+        />
+      )}
     </div>
   )
 }
