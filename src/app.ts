@@ -7,7 +7,7 @@ import usersRouter from './modules/users/users.router'
 import recordsRouter from './modules/records/records.router'
 import auditRouter from './modules/audit/audit.router'
 import dashboardRouter from './modules/dashboard/dashboard.router'
-import cors from 'cors'
+//import cors from 'cors'
 
 const app = express()
 
