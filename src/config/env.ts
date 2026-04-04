@@ -7,6 +7,7 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(10),
   JWT_EXPIRES_IN: z.string().default('7d'),
   PORT: z.string().default('3000'),
+  FRONTEND_URL: z.string().url().default('http://localhost:3001'),
 })
 
 const parsed = envSchema.safeParse(process.env)

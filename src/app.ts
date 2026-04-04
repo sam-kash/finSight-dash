@@ -1,4 +1,6 @@
+import cors from 'cors'
 import express from 'express'
+import { env } from './config/env'
 import { errorHandler } from './middlewares/errorHandler'
 import authRouter from './modules/auth/auth.router'
 import usersRouter from './modules/users/users.router'
@@ -9,6 +11,10 @@ import cors from 'cors'
 
 const app = express()
 
+app.use(cors({
+  origin: env.FRONTEND_URL,
+  credentials: true,
+}))
 app.use(express.json())
 
 app.use(cors({
